@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: recsys_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: recsys_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  qdrant:
+    image: qdrant/qdrant:v1.8.4
+    container_name: recsys_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.12.1
+    container_name: recsys_mlflow
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow.db:/mlflow/mlflow.db
+      - ./mlruns:/mlflow/mlruns
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: recsys_api
+    environment:
+      DATABASE_URL: postgresql://admin:admin@postgres:5432/recsys_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./data/raw/movies.csv:/app/data/raw/movies.csv:ro
+      - ./data/processed/popularity.csv:/app/data/processed/popularity.csv:ro
+
+volumes:
+  postgres_data:
+  qdrant_data:
