@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Data (raw dumps and large processed files are not committed)
+data/raw/
+data/processed/
+*.parquet
+# Serving artifact: small precomputed popularity table used by the API
+!data/processed/popularity.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# ML & Logs
+mlruns/
+artifacts/
+*.pkl
+*.joblib
+.env
