@@ -4,7 +4,7 @@ Movie recommender on MovieLens ratings with TMDB descriptions. Plain SVD trained
 
 ## Data
 
-Raw dumps go in `data/raw/` (not committed): `ratings.csv`, `movies.csv`, `links.csv`, `tmdb_5000_movies.csv`. Processed files live in `data/processed/`:
+Raw dumps go in `data/raw/` (not committed, download manually): [ratings.csv](https://grouplens.org/datasets/movielens/25m/), [movies.csv](https://grouplens.org/datasets/movielens/25m/), [links.csv](https://grouplens.org/datasets/movielens/25m/) (ships with the same MovieLens bundle), [tmdb_5000_movies.csv](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata) and [tmdb_5000_credits.csv](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata) (Kaggle login required). Processed files live in `data/processed/`
 
 - `interactions.parquet` — ratings joined with titles/genres, movies with fewer than 50 ratings removed
 - `movie_embeddings.pkl` — MiniLM (`all-MiniLM-L6-v2`) embeddings for matched TMDB movies
