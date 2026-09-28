@@ -6,6 +6,9 @@ RUN pip install --no-cache-dir -e .
 COPY src/ ./src/
 COPY data/raw/movies.csv ./data/raw/movies.csv
 COPY data/processed/popularity.csv ./data/processed/popularity.csv
+# Trained weights (run src/models/train_bpr_hybrid.py once before `docker build`,
+# otherwise the build fails fast instead of serving a silently degraded model).
+COPY artifacts/ ./artifacts/
 
 EXPOSE 8000
 CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -56,9 +56,14 @@ class BPRDataset(TorchDataset):
         self.pairs = []
         rng = np.random.default_rng(seed)
         for u, pos_items in user_pos_list:
-            negs = rng.integers(0, n_items, size=len(pos_items) * n_neg)
-            for p, n_ in zip(pos_items, negs):
-                self.pairs.append((u, p, int(n_)))
+            pos_set = set(int(x) for x in pos_items)
+            for p in pos_items:
+                # n_neg negatives per positive, resampled if they collide with a liked item
+                for _ in range(n_neg):
+                    n_ = int(rng.integers(0, n_items))
+                    while n_ in pos_set:
+                        n_ = int(rng.integers(0, n_items))
+                    self.pairs.append((u, int(p), n_))
         self.pairs = np.array(self.pairs, dtype=np.int64)
 
     def __len__(self):
@@ -252,12 +257,15 @@ def main():
     # ---------- 5. Persist weights so serving never retrains ----------
     # Serving builds the user vector on the fly as the mean of liked item
     # vectors, so only item vectors + id mapping + ensemble weights are needed.
+    # item_hf_n shares the row order of movie_to_idx with the BPR vectors,
+    # so no second mapping file is needed. Zero rows = movie without embedding.
     import json
     import pickle
 
     artifacts = BASE_DIR / "artifacts"
     artifacts.mkdir(exist_ok=True)
     np.save(artifacts / "bpr_item_vectors.npy", I)
+    np.save(artifacts / "hf_item_vectors.npy", item_hf_n)
     with open(artifacts / "bpr_movie_to_idx.pkl", "wb") as f:
         pickle.dump(movie_to_idx, f)
     with open(artifacts / "ensemble_weights.json", "w") as f:
@@ -267,12 +275,18 @@ def main():
             f, indent=2,
         )
     logging.info(f"Weights saved to {artifacts} (no retraining needed for serving)")
-    with mlflow.start_run(run_name="final_artifacts"):
-        mlflow.log_param("cf", cf_name)
-        mlflow.log_metric("recall_at_10", s["recall@10"])
-        mlflow.log_metric("ndcg_at_10", s["ndcg@10"])
-        mlflow.log_artifact(str(artifacts / "bpr_item_vectors.npy"))
-        mlflow.log_artifact(str(artifacts / "ensemble_weights.json"))
+    # MLflow logging is bookkeeping only: weights are already persisted above,
+    # so a tracking failure (e.g. stale artifact URIs) must not fail the run.
+    try:
+        with mlflow.start_run(run_name="final_artifacts"):
+            mlflow.log_param("cf", cf_name)
+            mlflow.log_metric("recall_at_10", s["recall@10"])
+            mlflow.log_metric("ndcg_at_10", s["ndcg@10"])
+            mlflow.log_artifact(str(artifacts / "bpr_item_vectors.npy"))
+            mlflow.log_artifact(str(artifacts / "hf_item_vectors.npy"))
+            mlflow.log_artifact(str(artifacts / "ensemble_weights.json"))
+    except Exception as e:
+        logging.warning(f"MLflow final logging skipped: {e}")
 
 
 if __name__ == "__main__":

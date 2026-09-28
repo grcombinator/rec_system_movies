@@ -19,7 +19,6 @@ dependencies = [
     "fastapi>=0.100.0",
     "uvicorn>=0.23.0",
     "pydantic>=2.0.0",
-    "qdrant-client>=1.4.0",
     "streamlit>=1.25.0",
     "python-dotenv>=1.0.0",
 ]
